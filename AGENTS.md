@@ -70,6 +70,15 @@ mise run fix        # авто-исправление: spotless:apply + oxfmt
 - **Запрещено** устанавливать браузеры в систему (`playwright install`, `apt install chromium`, и т.п.).
 - Браузер Playwright MCP работает в Docker-контейнере. Для доступа к локальному dev-серверу запускайте его с флагом `--host` (Vite) и используйте IP хоста (`hostname -I | awk '{print $1}'`) вместо `localhost`.
 
+## Команды агента
+
+Вызов агента в GitHub: оставьте комментарий в issue или pull request с командой `/oc` или `/opencode`.
+
+Примеры:
+- `/oc объясни эту issue` — агент прочитает контекст и ответит
+- `/oc fix this` — агент создаст ветку, реализует исправление и откроет PR
+- `/oc review this PR` — агент проведёт ревью pull request
+
 ## Agent skills
 
 ### Issue tracker
