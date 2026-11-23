@@ -67,6 +67,24 @@ mise run start:dev    # оба сервиса + Docker Compose (backend + fronte
 
 </details>
 
+## GitHub App Opencode Agent
+
+Агент работает в GitHub Actions и отвечает на команды в комментариях issue и pull request.
+
+**Событие:** `issue_comment.created`, `pull_request_review_comment.created`
+
+**Команды:** `/oc`, `/opencode` (регистр не имеет значения)
+
+**Модель:** `opencode/mimo-v2.6-flash-free`
+
+**Назначение:** объяснение issue, исправление багов, реализация фич, ревью PR — агент работает в runner'е, создаёт ветки и PR.
+
+**Результаты:** ответ в комментарии issue/PR, создание ветки и pull request при реализации изменений.
+
+**Воркфлоу:** `.github/workflows/opencode.yml` — триггерится по команде доверенного участника, боты игнорируются, секреты не передаются форкам.
+
+---
+
 ## Сценарий пользователя
 
 В topbar приложения три кнопки `Записаться`, `Админка` и `Предстоящие встречи`:
