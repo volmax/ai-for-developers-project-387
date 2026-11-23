@@ -37,6 +37,7 @@ jobs:
         uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          OPENCODE_PERMISSION: '{"external_directory": "allow", "doom_loop": "allow"}'
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          OPENCODE_PERMISSION: '{"external_directory": {"*": "allow"}, "doom_loop": "allow"}'
         with:
           model: opencode/glm-5.3-flash
