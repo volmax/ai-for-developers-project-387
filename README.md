@@ -10,7 +10,7 @@
 
 ## Публикация
 
-**Публичная ссылка:** https://ai-for-developers-project-387-<slug>.onrender.com
+**Публичная ссылка:** https://ai-for-developers-project-387-9fef.onrender.com/
 
 ## MCP-конфигурация
 
