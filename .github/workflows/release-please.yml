@@ -1,0 +1,49 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Debug git log
+        run: git log --oneline -20
+
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          skip-github-pull-request: false
+          skip-github-release: false
+
+      - name: Debug release outputs
+        if: always()
+        run: |
+          echo "release_created: ${{ steps.release.outputs.release_created }}"
+          echo "tag_name: ${{ steps.release.outputs.tag_name }}"
+          echo "upload_url: ${{ steps.release.outputs.upload_url }}"
+
+      - name: Tag release
+        if: ${{ steps.release.outputs.release_created }}
+        run: echo "Release ${release_tag} created"
+        env:
+          release_tag: ${{ steps.release.outputs.tag_name }}

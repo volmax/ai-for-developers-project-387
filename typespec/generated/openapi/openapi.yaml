@@ -1,0 +1,338 @@
+openapi: 3.0.0
+info:
+  title: Booking API
+  description: API для управления бронированиями календаря
+  version: 0.0.0
+tags:
+  - name: EventTypes
+  - name: Bookings
+paths:
+  /api/bookings:
+    post:
+      operationId: Bookings_create
+      description: Создать бронирование (201/400/409)
+      parameters: []
+      responses:
+        '201':
+          description: Ответ 201 — бронирование создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreated'
+        '409':
+          description: Ответ 409 — конфликт бронирования
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingConflict'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+  /api/bookings/available-slots:
+    get:
+      operationId: Bookings_availableSlots
+      description: Получить доступные слоты
+      parameters:
+        - name: eventTypeId
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Bookings
+  /api/bookings/free-slots-count:
+    get:
+      operationId: Bookings_freeSlotsCount
+      description: Получить количество свободных слотов
+      parameters:
+        - name: eventTypeId
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreeSlotsCountResult'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Bookings
+  /api/bookings/upcoming:
+    get:
+      operationId: Bookings_upcoming
+      description: Получить предстоящие встречи
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Bookings
+  /api/event-types:
+    get:
+      operationId: EventTypes_list
+      description: Получить список типов событий
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - EventTypes
+    post:
+      operationId: EventTypes_create
+      description: Создать новый тип события (201/400)
+      parameters: []
+      responses:
+        '201':
+          description: Ответ 201 — тип события создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeCreated'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - EventTypes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTypeCreate'
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - eventTypeName
+        - eventDurationMinutes
+        - slotStart
+        - slotEnd
+        - guestName
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Уникальный идентификатор
+        eventTypeId:
+          type: string
+          description: ID типа события
+        eventTypeName:
+          type: string
+          description: Название типа события (денормализовано)
+        eventDurationMinutes:
+          type: integer
+          format: int32
+          description: Длительность события в минутах (денормализовано)
+        slotStart:
+          type: string
+          format: date-time
+          description: Время начала бронирования
+        slotEnd:
+          type: string
+          format: date-time
+          description: Время окончания бронирования
+        guestName:
+          type: string
+          description: Имя гостя (обязательно)
+        guestEmail:
+          type: string
+          description: Email гостя (опционально)
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания
+      description: Бронирование слота
+    BookingConflict:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+          description: Описание ошибки
+      description: Ответ 409 — конфликт бронирования
+    BookingCreated:
+      type: object
+      required:
+        - booking
+      properties:
+        booking:
+          $ref: '#/components/schemas/Booking'
+      description: Ответ 201 — бронирование создано
+    BookingRequest:
+      type: object
+      required:
+        - eventTypeId
+        - slotStart
+        - guestName
+      properties:
+        eventTypeId:
+          type: string
+          description: ID типа события
+        slotStart:
+          type: string
+          format: date-time
+          description: Время начала слота (ISO 8601)
+        guestName:
+          type: string
+          description: Имя гостя (обязательно)
+        guestEmail:
+          type: string
+          description: Email гостя (опционально)
+      description: Запрос на создание бронирования
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Код ошибки
+        message:
+          type: string
+          description: Описание ошибки
+      description: Ошибка
+    EventType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Уникальный идентификатор
+        name:
+          type: string
+          description: Название типа события
+        description:
+          type: string
+          description: Описание типа события
+        durationMinutes:
+          type: integer
+          format: int32
+          description: Длительность в минутах
+      description: Тип события
+    EventTypeCreate:
+      type: object
+      required:
+        - name
+        - description
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          description: Название типа события (обязательное)
+        description:
+          type: string
+          description: Описание типа события (обязательное)
+        durationMinutes:
+          type: integer
+          format: int32
+          description: Длительность в минутах
+      description: Запрос на создание типа события
+    EventTypeCreated:
+      type: object
+      required:
+        - eventType
+      properties:
+        eventType:
+          allOf:
+            - $ref: '#/components/schemas/EventType'
+          description: Созданный тип события
+      description: Ответ 201 — тип события создан
+    FreeSlotsCountResult:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int32
+          description: Количество свободных слотов на дату
+      description: Ответ с количеством свободных слотов
