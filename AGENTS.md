@@ -1,0 +1,105 @@
+# AGENTS.md — Правила для AI-агентов
+
+## Быстрый старт
+
+```bash
+mise run install    # backend: mvn dependency:go-offline, frontend: npm install
+mise run build      # backend: mvn package -DskipTests, frontend: tsc -b && vite build
+mise run test       # backend: mvn test, frontend: vitest run
+mise run check      # полный lint/typecheck/format/security перед коммитом
+mise run fix        # авто-исправление: spotless:apply + oxfmt
+```
+
+Запуск сервисов: `mise run start:backend` и `mise run start:frontend` (или `mise daemon`).
+
+## Структура
+
+- **backend/** — Spring Boot 4.1.2, Java 21, H2. Точка входа: `AiForDevelopersProject387Application.java`. Health-эндпоинт: `GET /api/health`.
+- **frontend/** — React 19, Vite 6, TypeScript 5, Tailwind CSS 3. Точка входа: `src/main.tsx`. Алиас `@` → `./src`.
+- **docker-compose.yml** — `backend` (8080) + `frontend` (80, nginx, проксирует `/api` → backend).
+
+## Неочевидные команды
+
+- `mise run check` запускает ~12 шагов: hadolint (оба Dockerfile), spotless:check, maven compile, oxlint, oxfmt, knip, jactionlint, typos, betterleaks, 4 проверки JSON-схем, 2 osv-scanner. **Это gate — должен проходить.**
+
+## НЕ трогать
+
+- `.github/workflows/hexlet-check.yml` — автогенерация Hexlet. Не менять и не удалять.
+- `.github/workflows/ci.yml` — обновляется через jactionlint. Не менять напрямую.
+- `.env` — в `.gitignore`, никогда не коммитить.
+- **`backend/pom.xml`** — все зависимости строго зафиксированы. **Запрещено** менять версии или добавлять новые зависимости без разрешения разработчика.
+
+## Коммиты
+
+Формат: `<type>[scope]: <description>`
+
+| Тип | Что делает | SemVer |
+|-----|-----------|--------|
+| `feat` | новая функция | MINOR |
+| `fix` | исправление бага | PATCH |
+| `refactor` | рефакторинг (без новых фич/багов) | — |
+| `perf` | улучшение производительности | — |
+| `test` | тесты | — |
+| `docs` | документация | — |
+| `chore` | рутина (deps, конфиги) | — |
+
+- `fix:` → PATCH, `feat:` → MINOR.
+- Breaking change: `BREAKING CHANGE: ...` в body или footer (MAJOR).
+- Scope в скобках: `feat(auth): add login`.
+- Описание — краткое, в повелительном наклонении, без точки в конце.
+- Каждый коммит реализации должен ссылаться на тикет в формате:
+  `feat(scope): description (#NN)`
+  Пример: `feat(booking): add conflict detection (#5)`
+
+## Инструменты
+
+- Всё зафиксировано в `mise.toml`
+
+## Coding Standards
+
+Полные правила качества кода и тестирования: `CODING_STANDARDS.md`.
+
+Основные:
+- Тесты сервисов — чистые unit-тесты с моками, без Spring Boot контекста
+- Тестовые сущности — `testEntity()` builder
+- Временные зависимости — `Clock` injection
+
+## Playwright E2E-тесты
+
+- Использовать **только** MCP-сервер `playwright-docker`. Не запускать `npx playwright test` напрямую.
+- **Запрещено** устанавливать браузеры в систему (`playwright install`, `apt install chromium`, и т.п.).
+- Браузер Playwright MCP работает в Docker-контейнере. Для доступа к локальному dev-серверу запускайте его с флагом `--host` (Vite) и используйте IP хоста (`hostname -I | awk '{print $1}'`) вместо `localhost`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues tracked as GitHub issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: `GLOSSARY.md` at root, `docs/adr/` for ADRs. See `docs/agents/domain.md`.
+
+### External references
+
+Ссылки на документацию фреймворков и библиотек: `docs/reference.md`.
+
+### TypeSpec
+
+Контрактная цепочка: `typespec/`. Пinned-версии в `typespec/package.json` —
+читать перед `npm install`. Lockfile `typespec/package-lock.json` — canonical
+source, использовать `npm ci` или `npm install --package-lock-only`.
+
+Документация: https://typespec.io/docs
+
+Важно: синтаксис TypeSpec v1.x. Query-параметры с дефолтом — optional
+(например, `@query() skip?: int32 = 0`).
+
+Сгенерированные файлы в `typespec/generated/` нельзя править вручную.
+Все изменения должны вноситься только в исходный контракт (`typespec/main.tsp`)
+с последующей перегенерацией через `npm run compile && npm run generate-client`.
+CI проверяет, что `git diff generated/` пустой.
