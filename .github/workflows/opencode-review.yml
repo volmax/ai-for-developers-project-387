@@ -64,12 +64,6 @@ jobs:
             echo "limit_exceeded=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check limit
-        if: steps.count.outputs.limit_exceeded == 'true'
-        run: |
-          echo "::error::Превышен предел запусков агента для PR #${PR_NUMBER}. Выполнено: ${{ steps.count.outputs.agent_runs }}, максимум: ${{ steps.count.outputs.max_runs }}. Статус: limit_exhausted. Требуется вмешательство человека."
-          exit 1
-
       - name: Limit exceeded — publish notice
         if: steps.count.outputs.limit_exceeded == 'true'
         env:
