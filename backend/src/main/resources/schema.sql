@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS booking (
     slot_end TIMESTAMP NOT NULL,
     guest_name VARCHAR(255) NOT NULL,
     guest_email VARCHAR(255),
+    topic VARCHAR(300),
     created_at TIMESTAMP NOT NULL
 );
 

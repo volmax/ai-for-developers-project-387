@@ -95,6 +95,7 @@ public class BookingService {
                         slotEnd,
                         request.getGuestName(),
                         request.getGuestEmail(),
+                        normalizeTopic(request.getTopic()),
                         LocalDateTime.ofInstant(clock.instant(), clock.getZone()));
 
         try {
@@ -102,6 +103,14 @@ public class BookingService {
         } catch (DataIntegrityViolationException e) {
             throw new IllegalStateException("Слот уже занят");
         }
+    }
+
+    /** Normalize meeting topic: null, empty or whitespace-only becomes null, otherwise trimmed. */
+    private String normalizeTopic(String topic) {
+        if (topic == null || topic.isBlank()) {
+            return null;
+        }
+        return topic.trim();
     }
 
     /**

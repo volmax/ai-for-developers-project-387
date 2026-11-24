@@ -194,4 +194,69 @@ class BookingControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
+
+    @Test
+    void createBookingWithTooLongTopicShouldReturn400() throws Exception {
+        LocalDateTime slotStart = LocalDateTime.of(2026, 11, 23, 10, 0);
+        String tooLongTopic = "т".repeat(301);
+        String json =
+                """
+                {
+                    "eventTypeId": "1",
+                    "slotStart": "%s",
+                    "guestName": "Test Guest",
+                    "topic": "%s"
+                }
+                """
+                        .formatted(
+                                slotStart.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                                tooLongTopic);
+
+        mockMvc.perform(post("/api/bookings").contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(
+                        jsonPath("$.message").value(org.hamcrest.Matchers.containsString("topic")));
+    }
+
+    @Test
+    void createBookingWithTopicShouldReturnTopicInCreatedBooking() throws Exception {
+        LocalDateTime slotStart = LocalDateTime.of(2026, 11, 23, 10, 0);
+        String json =
+                """
+                {
+                    "eventTypeId": "1",
+                    "slotStart": "%s",
+                    "guestName": "Test Guest",
+                    "topic": "Обсудить архитектуру проекта"
+                }
+                """
+                        .formatted(slotStart.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+        mockMvc.perform(post("/api/bookings").contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.booking.topic").value("Обсудить архитектуру проекта"));
+    }
+
+    @Test
+    void upcomingShouldReturnTopicForBookingWithTopic() throws Exception {
+        LocalDateTime slotStart = LocalDateTime.of(2026, 11, 23, 10, 0);
+        String json =
+                """
+                {
+                    "eventTypeId": "1",
+                    "slotStart": "%s",
+                    "guestName": "Test Guest",
+                    "topic": "Обсудить архитектуру проекта"
+                }
+                """
+                        .formatted(slotStart.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+        mockMvc.perform(post("/api/bookings").contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/bookings/upcoming"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].topic").value("Обсудить архитектуру проекта"));
+    }
 }

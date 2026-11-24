@@ -124,6 +124,8 @@ export interface components {
             guestName: string;
             /** @description Email гостя (опционально) */
             guestEmail?: string;
+            /** @description Тема встречи (опционально, до 300 символов) */
+            topic?: string;
             /**
              * Format: date-time
              * @description Дата создания
@@ -153,6 +155,8 @@ export interface components {
             guestName: string;
             /** @description Email гостя (опционально) */
             guestEmail?: string;
+            /** @description Тема встречи (опционально, до 300 символов) */
+            topic?: string;
         };
         /** @description Ошибка */
         ErrorResponse: {
