@@ -41,6 +41,25 @@ class BookingServiceTest {
         return new BookingService(bookingRepository, eventTypeRepository, slotService, FIXED_CLOCK);
     }
 
+    private void stubSaveEchoesEntity() {
+        when(bookingRepository.save(any()))
+                .thenAnswer(
+                        invocation -> {
+                            Booking saved = invocation.getArgument(0);
+                            return Booking.testEntity()
+                                    .id(1L)
+                                    .eventTypeId(saved.getEventTypeId())
+                                    .eventTypeName(saved.getEventTypeName())
+                                    .eventDurationMinutes(saved.getEventDurationMinutes())
+                                    .slotStart(saved.getSlotStart())
+                                    .slotEnd(saved.getSlotEnd())
+                                    .guestName(saved.getGuestName())
+                                    .topic(saved.getTopic())
+                                    .createdAt(saved.getCreatedAt())
+                                    .build();
+                        });
+    }
+
     // --- create ---
 
     @Nested
@@ -123,6 +142,11 @@ class BookingServiceTest {
             Booking booking = createService(eventType).create(request);
 
             assertEquals("Обсудить архитектуру проекта", booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
         }
 
         @Test
@@ -139,26 +163,16 @@ class BookingServiceTest {
             when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
             when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
                     .thenReturn(List.of());
-            when(bookingRepository.save(any()))
-                    .thenAnswer(
-                            invocation -> {
-                                Booking saved = invocation.getArgument(0);
-                                return Booking.testEntity()
-                                        .id(1L)
-                                        .eventTypeId(saved.getEventTypeId())
-                                        .eventTypeName(saved.getEventTypeName())
-                                        .eventDurationMinutes(saved.getEventDurationMinutes())
-                                        .slotStart(saved.getSlotStart())
-                                        .slotEnd(saved.getSlotEnd())
-                                        .guestName(saved.getGuestName())
-                                        .topic(saved.getTopic())
-                                        .createdAt(saved.getCreatedAt())
-                                        .build();
-                            });
+            stubSaveEchoesEntity();
 
             Booking booking = createService(eventType).create(request);
 
             assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
         }
 
         @Test
@@ -175,26 +189,16 @@ class BookingServiceTest {
             when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
             when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
                     .thenReturn(List.of());
-            when(bookingRepository.save(any()))
-                    .thenAnswer(
-                            invocation -> {
-                                Booking saved = invocation.getArgument(0);
-                                return Booking.testEntity()
-                                        .id(1L)
-                                        .eventTypeId(saved.getEventTypeId())
-                                        .eventTypeName(saved.getEventTypeName())
-                                        .eventDurationMinutes(saved.getEventDurationMinutes())
-                                        .slotStart(saved.getSlotStart())
-                                        .slotEnd(saved.getSlotEnd())
-                                        .guestName(saved.getGuestName())
-                                        .topic(saved.getTopic())
-                                        .createdAt(saved.getCreatedAt())
-                                        .build();
-                            });
+            stubSaveEchoesEntity();
 
             Booking booking = createService(eventType).create(request);
 
             assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
         }
 
         @Test
@@ -211,26 +215,16 @@ class BookingServiceTest {
             when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
             when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
                     .thenReturn(List.of());
-            when(bookingRepository.save(any()))
-                    .thenAnswer(
-                            invocation -> {
-                                Booking saved = invocation.getArgument(0);
-                                return Booking.testEntity()
-                                        .id(1L)
-                                        .eventTypeId(saved.getEventTypeId())
-                                        .eventTypeName(saved.getEventTypeName())
-                                        .eventDurationMinutes(saved.getEventDurationMinutes())
-                                        .slotStart(saved.getSlotStart())
-                                        .slotEnd(saved.getSlotEnd())
-                                        .guestName(saved.getGuestName())
-                                        .topic(saved.getTopic())
-                                        .createdAt(saved.getCreatedAt())
-                                        .build();
-                            });
+            stubSaveEchoesEntity();
 
             Booking booking = createService(eventType).create(request);
 
             assertEquals("Обсуждение релиза", booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
         }
 
         @Test
@@ -247,26 +241,16 @@ class BookingServiceTest {
             when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
             when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
                     .thenReturn(List.of());
-            when(bookingRepository.save(any()))
-                    .thenAnswer(
-                            invocation -> {
-                                Booking saved = invocation.getArgument(0);
-                                return Booking.testEntity()
-                                        .id(1L)
-                                        .eventTypeId(saved.getEventTypeId())
-                                        .eventTypeName(saved.getEventTypeName())
-                                        .eventDurationMinutes(saved.getEventDurationMinutes())
-                                        .slotStart(saved.getSlotStart())
-                                        .slotEnd(saved.getSlotEnd())
-                                        .guestName(saved.getGuestName())
-                                        .topic(saved.getTopic())
-                                        .createdAt(saved.getCreatedAt())
-                                        .build();
-                            });
+            stubSaveEchoesEntity();
 
             Booking booking = createService(eventType).create(request);
 
             assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
         }
 
         @Test
