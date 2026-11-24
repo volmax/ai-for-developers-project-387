@@ -34,21 +34,24 @@ jobs:
 
       - name: Count agent runs for this PR
         id: count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
-          PR_NUMBER="${{ github.event.pull_request.number }}"
           MAX_RUNS=3
-          CURRENT_RUN=0
 
           # Count runs of opencode-review or opencode workflow for this PR
+          # Include completed + in_progress + queued to avoid off-by-one
           CURRENT_RUN=$(gh run list \
             --repo "$GITHUB_REPOSITORY" \
-            --branch "${{ github.event.pull_request.head.ref }}" \
-            --json createdAt,status,database_id \
+            --branch "$HEAD_REF" \
+            --json workflow,status,databaseId \
             --jq '[.[] | select(
               (.workflow == "opencode-review" or .workflow == "opencode") and
-              .status == "completed" and
-              (.conclusion == "success" or .conclusion == "failure" or .conclusion == "cancelled")
+              .status != "requested" and
+              (.status == "completed" or .status == "in_progress" or .status == "queued")
             )] | length')
 
           echo "agent_runs=$CURRENT_RUN" >> "$GITHUB_OUTPUT"
@@ -63,14 +66,13 @@ jobs:
       - name: Check limit
         if: steps.count.outputs.limit_exceeded == 'true'
         run: |
-          echo "::error::Превышен предел запусков агента для PR #${{ github.event.pull_request.number }}. Выполнено: ${{ steps.count.outputs.agent_runs }}, максимум: ${{ steps.count.outputs.max_runs }}. Статус: limit_exhausted. Требуется вмешательство человека."
+          echo "::error::Превышен предел запусков агента для PR #${PR_NUMBER}. Выполнено: ${{ steps.count.outputs.agent_runs }}, максимум: ${{ steps.count.outputs.max_runs }}. Статус: limit_exhausted. Требуется вмешательство человека."
           exit 1
 
       - name: Limit exceeded — publish notice
         if: steps.count.outputs.limit_exceeded == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           cat > "$RUNNER_TEMP/limit-notice.md" <<EOF
           ## ⚠️ Превышен предел запусков агента
