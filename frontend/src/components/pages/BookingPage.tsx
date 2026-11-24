@@ -55,6 +55,7 @@ export function BookingPage() {
   // Booking form state
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
+  const [topic, setTopic] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<Booking | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -178,6 +179,7 @@ export function BookingPage() {
         slotStart: selectedSlot,
         guestName: guestName.trim(),
         guestEmail: guestEmail.trim() || undefined,
+        topic: topic.trim() || undefined,
       };
 
       const { data } = await createBooking({ body: request });
@@ -187,6 +189,7 @@ export function BookingPage() {
       setSelectedSlot(null);
       setGuestName("");
       setGuestEmail("");
+      setTopic("");
 
       // Refetch slots — the booked slot will disappear from the list
       if (eventType && selectedDate) {
@@ -396,6 +399,23 @@ export function BookingPage() {
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         placeholder="email@example.com"
                       />
+                    </div>
+                    <div>
+                      <label htmlFor="topic" className="mb-1 block text-sm font-medium">
+                        Тема встречи
+                      </label>
+                      <input
+                        id="topic"
+                        type="text"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        maxLength={300}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder="О чём хотите поговорить?"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Необязательно, до 300 символов
+                      </p>
                     </div>
                   </>
                 )}
