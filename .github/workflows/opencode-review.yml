@@ -36,6 +36,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           MAX_RUNS=3
@@ -46,8 +47,10 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --branch "$HEAD_REF" \
             --json workflowName,status,databaseId \
+            --argjson current "$CURRENT_RUN_ID" \
             --jq '[.[] | select(
               (.workflowName == "opencode-review" or .workflowName == "opencode") and
+              .databaseId != $current and
               .status != "requested" and
               (.status == "completed" or .status == "in_progress" or .status == "queued")
             )] | length')
