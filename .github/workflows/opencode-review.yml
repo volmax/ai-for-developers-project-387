@@ -45,9 +45,9 @@ jobs:
           CURRENT_RUN=$(gh run list \
             --repo "$GITHUB_REPOSITORY" \
             --branch "$HEAD_REF" \
-            --json workflow,status,databaseId \
+            --json workflowName,status,databaseId \
             --jq '[.[] | select(
-              (.workflow == "opencode-review" or .workflow == "opencode") and
+              (.workflowName == "opencode-review" or .workflowName == "opencode") and
               .status != "requested" and
               (.status == "completed" or .status == "in_progress" or .status == "queued")
             )] | length')
