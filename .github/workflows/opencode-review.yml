@@ -9,8 +9,84 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  review:
+  limit:
     if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.pull_request.user.login == github.repository_owner ||
+       github.event.pull_request.user.login == 'opencode-agent[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    outputs:
+      limit_exceeded: ${{ steps.count.outputs.limit_exceeded }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3 (pinned SHA)
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Count agent runs for this PR
+        id: count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          MAX_RUNS=3
+
+          # Count runs of opencode-review or opencode workflow for this PR
+          # Exclude the current run to avoid self-counting
+          # Include completed + in_progress + queued to avoid off-by-one
+          CURRENT_RUN=$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --branch "$HEAD_REF" \
+            --json workflowName,status,databaseId \
+          | jq --argjson current "$CURRENT_RUN_ID" '[.[] | select(
+              (.workflowName == "opencode-review" or .workflowName == "opencode") and
+              .databaseId != $current and
+              .status != "requested" and
+              (.status == "completed" or .status == "in_progress" or .status == "queued")
+            )] | length')
+
+          echo "agent_runs=$CURRENT_RUN" >> "$GITHUB_OUTPUT"
+          echo "max_runs=$MAX_RUNS" >> "$GITHUB_OUTPUT"
+
+          if [ "$CURRENT_RUN" -ge "$MAX_RUNS" ]; then
+            echo "limit_exceeded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "limit_exceeded=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Limit exceeded — publish notice
+        if: steps.count.outputs.limit_exceeded == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          cat > "$RUNNER_TEMP/limit-notice.md" <<EOF
+          ## ⚠️ Превышен предел запусков агента
+
+          **Статус:** limit_exhausted
+          **Выполнено запусков:** ${{ steps.count.outputs.agent_runs }} / ${{ steps.count.outputs.max_runs }}
+          **Текущий SHA:** \`${{ github.event.pull_request.head.sha }}\`
+          **Лог этого прогона:** [ссылка на run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          **Причина:** бюджет запусков исчерпан. Автоматические вызовы модели остановлены.
+          **Действие:** требуется вмешательство человека — проверьте замечания ревью, примите решение о мерже или продолжите правки вручную.
+          EOF
+          gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/limit-notice.md"
+
+  review:
+    needs: [limit]
+    if: >-
+      needs.limit.outputs.limit_exceeded != 'true' &&
       !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (github.event.pull_request.user.login == github.repository_owner ||
@@ -26,7 +102,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3 (pinned SHA)
         with:
           persist-credentials: false
           fetch-depth: 0
