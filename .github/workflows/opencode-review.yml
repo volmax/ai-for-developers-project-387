@@ -68,6 +68,7 @@ jobs:
         if: steps.count.outputs.limit_exceeded == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           cat > "$RUNNER_TEMP/limit-notice.md" <<EOF
           ## ⚠️ Превышен предел запусков агента
