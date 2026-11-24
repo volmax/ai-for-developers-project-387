@@ -78,6 +78,10 @@ model Booking {
   /** Email гостя (опционально) */
   guestEmail?: string;
 
+  /** Тема встречи (опционально, до 300 символов) */
+  @maxLength(300)
+  topic?: string;
+
   /** Дата создания */
   createdAt: utcDateTime;
 }
@@ -97,6 +101,10 @@ model BookingRequest {
 
   /** Email гостя (опционально) */
   guestEmail?: string;
+
+  /** Тема встречи (опционально, до 300 символов) */
+  @maxLength(300)
+  topic?: string;
 }
 
 /**

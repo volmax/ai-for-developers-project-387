@@ -123,6 +123,47 @@ describe("AdminMeetingsPage", () => {
     expect(screen.queryByText("test@example.com")).not.toBeInTheDocument();
   });
 
+  it("отображает тему встречи на карточке, если она задана", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          createMockBooking({
+            topic: "Обсуждение проекта",
+          }),
+        ]),
+        { status: 200 },
+      ),
+    );
+
+    renderPage();
+
+    await waitFor(() => expect(screen.queryByText("Загрузка...")).not.toBeInTheDocument());
+
+    expect(screen.getByText("Тема")).toBeInTheDocument();
+    expect(screen.getByText("Обсуждение проекта")).toBeInTheDocument();
+  });
+
+  it("не отображает блок темы, если она не указана", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          createMockBooking({
+            guestName: "Иван Петров",
+          }),
+        ]),
+        { status: 200 },
+      ),
+    );
+
+    renderPage();
+
+    await waitFor(() => expect(screen.queryByText("Загрузка...")).not.toBeInTheDocument());
+
+    expect(screen.getByText("Иван Петров")).toBeInTheDocument();
+    expect(screen.queryByText("Тема")).not.toBeInTheDocument();
+    expect(screen.queryByText("Обсуждение проекта")).not.toBeInTheDocument();
+  });
+
   it("отображает сообщение об ошибке при ошибке загрузки", async () => {
     mockFetch.mockRejectedValueOnce(new Error("Ошибка сети"));
 

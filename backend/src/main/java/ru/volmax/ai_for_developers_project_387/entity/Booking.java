@@ -36,6 +36,9 @@ public class Booking {
     @Column("guest_email")
     private String guestEmail;
 
+    @Column("topic")
+    private String topic;
+
     @Column("created_at")
     private LocalDateTime createdAt;
 
@@ -49,6 +52,7 @@ public class Booking {
             LocalDateTime slotEnd,
             String guestName,
             String guestEmail,
+            String topic,
             LocalDateTime createdAt) {
         this.id = id;
         this.eventTypeId = eventTypeId;
@@ -58,6 +62,7 @@ public class Booking {
         this.slotEnd = slotEnd;
         this.guestName = guestName;
         this.guestEmail = guestEmail;
+        this.topic = topic;
         this.createdAt = createdAt;
     }
 
@@ -91,6 +96,10 @@ public class Booking {
 
     public String getGuestEmail() {
         return guestEmail;
+    }
+
+    public String getTopic() {
+        return topic;
     }
 
     public LocalDateTime getCreatedAt() {

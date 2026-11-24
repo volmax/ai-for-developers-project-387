@@ -41,6 +41,25 @@ class BookingServiceTest {
         return new BookingService(bookingRepository, eventTypeRepository, slotService, FIXED_CLOCK);
     }
 
+    private void stubSaveEchoesEntity() {
+        when(bookingRepository.save(any()))
+                .thenAnswer(
+                        invocation -> {
+                            Booking saved = invocation.getArgument(0);
+                            return Booking.testEntity()
+                                    .id(1L)
+                                    .eventTypeId(saved.getEventTypeId())
+                                    .eventTypeName(saved.getEventTypeName())
+                                    .eventDurationMinutes(saved.getEventDurationMinutes())
+                                    .slotStart(saved.getSlotStart())
+                                    .slotEnd(saved.getSlotEnd())
+                                    .guestName(saved.getGuestName())
+                                    .topic(saved.getTopic())
+                                    .createdAt(saved.getCreatedAt())
+                                    .build();
+                        });
+    }
+
     // --- create ---
 
     @Nested
@@ -85,6 +104,194 @@ class BookingServiceTest {
             assertEquals(slotStart.plusMinutes(30), booking.getSlotEnd());
             assertEquals("Test Guest", booking.getGuestName());
             assertEquals("test@example.com", booking.getGuestEmail());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should save and return topic when provided")
+        void createBookingWithTopicShouldSaveAndReturnTopic() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("Обсудить архитектуру проекта");
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            when(bookingRepository.save(any()))
+                    .thenReturn(
+                            Booking.testEntity()
+                                    .id(1L)
+                                    .eventTypeId("1")
+                                    .eventTypeName("Консультация")
+                                    .eventDurationMinutes(30)
+                                    .slotStart(slotStart)
+                                    .slotEnd(slotStart.plusMinutes(30))
+                                    .guestName("Test Guest")
+                                    .topic("Обсудить архитектуру проекта")
+                                    .createdAt(LocalDateTime.now(FIXED_CLOCK))
+                                    .build());
+
+            Booking booking = createService(eventType).create(request);
+
+            assertEquals("Обсудить архитектуру проекта", booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should normalize whitespace-only topic to null")
+        void createBookingWithWhitespaceOnlyTopicShouldSaveNull() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("   ");
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            stubSaveEchoesEntity();
+
+            Booking booking = createService(eventType).create(request);
+
+            assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should normalize empty string topic to null")
+        void createBookingWithEmptyTopicShouldSaveNull() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("");
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            stubSaveEchoesEntity();
+
+            Booking booking = createService(eventType).create(request);
+
+            assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should trim topic with leading and trailing whitespace")
+        void createBookingWithSurroundingWhitespaceTopicShouldTrim() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("  Обсуждение релиза  ");
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            stubSaveEchoesEntity();
+
+            Booking booking = createService(eventType).create(request);
+
+            assertEquals("Обсуждение релиза", booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should normalize whitespace-only topic longer than 300 characters to null")
+        void createBookingWithLongWhitespaceOnlyTopicShouldSaveNull() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("   ".repeat(350));
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            stubSaveEchoesEntity();
+
+            Booking booking = createService(eventType).create(request);
+
+            assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should throw when topic exceeds 300 characters after trim")
+        void createBookingWithTooLongTopicShouldThrow() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("  " + "т".repeat(301) + "  ");
+
+            IllegalStateException exception =
+                    assertThrows(
+                            IllegalStateException.class,
+                            () -> createService(eventType).create(request));
+
+            assertTrue(exception.getMessage().contains("topic"));
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should create booking without topic as before")
+        void createBookingWithoutTopicShouldSaveNullTopic() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setGuestEmail("test@example.com");
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            stubSaveEchoesEntity();
+
+            Booking booking = createService(eventType).create(request);
+
+            assertNull(booking.getTopic());
 
             verify(eventTypeRepository).findById(1L);
             verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());

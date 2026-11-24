@@ -216,6 +216,10 @@ components:
         guestEmail:
           type: string
           description: Email гостя (опционально)
+        topic:
+          type: string
+          maxLength: 300
+          description: Тема встречи (опционально, до 300 символов)
         createdAt:
           type: string
           format: date-time
@@ -261,6 +265,10 @@ components:
         guestEmail:
           type: string
           description: Email гостя (опционально)
+        topic:
+          type: string
+          maxLength: 300
+          description: Тема встречи (опционально, до 300 символов)
       description: Запрос на создание бронирования
     ErrorResponse:
       type: object

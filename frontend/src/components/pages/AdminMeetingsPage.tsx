@@ -120,6 +120,12 @@ export function AdminMeetingsPage() {
                       </p>
                     </div>
                   </div>
+                  {booking.topic && (
+                    <div className="mt-2">
+                      <p className="text-sm text-muted-foreground">Тема</p>
+                      <p className="font-medium">{booking.topic}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
