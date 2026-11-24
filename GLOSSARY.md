@@ -6,7 +6,7 @@
 
 ## Booking
 
-Бронирование слота гостем. Содержит: guestName (обязательно), guestEmail (опционально), eventTypeId, eventTypeName (денормализовано), eventDurationMinutes (денормализовано), slotStart, slotEnd, createdAt, topic (тема — необязательный краткий текст до 300 символов, о чём гость хочет поговорить).
+Бронирование слота гостем. Содержит: guestName (обязательно), guestEmail (опционально), eventTypeId, eventTypeName (денормализовано), eventDurationMinutes (денормализовано), slotStart, slotEnd, createdAt, topic (тема — необязательный краткий текст до 300 символов после обрезки пробелов, о чём гость хочет поговорить; пустая тема или состоящая только из пробелов любой длины сохраняется как null, длина проверяется после обрезки).
 
 ## BookingWindow
 

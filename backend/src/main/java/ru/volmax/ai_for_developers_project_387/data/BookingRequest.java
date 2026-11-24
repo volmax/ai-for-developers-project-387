@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 public class BookingRequest {
 
@@ -18,7 +17,6 @@ public class BookingRequest {
     @Email(message = "Guest email must be a valid email address")
     private String guestEmail;
 
-    @Size(max = 300, message = "Meeting topic must not exceed 300 characters")
     private String topic;
 
     public String getEventTypeId() {

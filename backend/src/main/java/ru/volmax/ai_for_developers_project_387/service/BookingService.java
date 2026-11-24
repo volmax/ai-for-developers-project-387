@@ -19,6 +19,8 @@ import ru.volmax.ai_for_developers_project_387.repository.EventTypeRepository;
 @Service
 public class BookingService {
 
+    private static final int MAX_TOPIC_LENGTH = 300;
+
     private final BookingRepository bookingRepository;
     private final EventTypeRepository eventTypeRepository;
     private final SlotService slotService;
@@ -37,6 +39,9 @@ public class BookingService {
 
     /** Create a new booking with pessimistic locking to prevent concurrent double-booking. */
     public Booking create(BookingRequest request) {
+        // 0. Normalize topic first: whitespace-only becomes null, length checked after trim
+        String topic = normalizeTopic(request.getTopic());
+
         // A. Validate booking window: tomorrow (inclusive) to 14 days from tomorrow (inclusive)
         LocalDate today = LocalDate.ofInstant(clock.instant(), clock.getZone());
         LocalDate windowStart = today.plusDays(1);
@@ -95,7 +100,7 @@ public class BookingService {
                         slotEnd,
                         request.getGuestName(),
                         request.getGuestEmail(),
-                        normalizeTopic(request.getTopic()),
+                        topic,
                         LocalDateTime.ofInstant(clock.instant(), clock.getZone()));
 
         try {
@@ -105,12 +110,21 @@ public class BookingService {
         }
     }
 
-    /** Normalize meeting topic: null, empty or whitespace-only becomes null, otherwise trimmed. */
+    /**
+     * Normalize meeting topic: null, empty or whitespace-only becomes null, otherwise trimmed.
+     * Length is validated after trimming, so a whitespace-only topic of any length normalizes to
+     * null instead of failing the limit.
+     */
     private String normalizeTopic(String topic) {
         if (topic == null || topic.isBlank()) {
             return null;
         }
-        return topic.trim();
+        String trimmed = topic.trim();
+        if (trimmed.length() > MAX_TOPIC_LENGTH) {
+            throw new IllegalStateException(
+                    "Тема встречи (topic) не должна превышать " + MAX_TOPIC_LENGTH + " символов");
+        }
+        return trimmed;
     }
 
     /**

@@ -220,6 +220,28 @@ class BookingControllerTest {
     }
 
     @Test
+    void createBookingWithLongWhitespaceOnlyTopicShouldNormalizeToNull() throws Exception {
+        LocalDateTime slotStart = LocalDateTime.of(2026, 11, 23, 10, 0);
+        String whitespaceTopic = " ".repeat(350);
+        String json =
+                """
+                {
+                    "eventTypeId": "1",
+                    "slotStart": "%s",
+                    "guestName": "Test Guest",
+                    "topic": "%s"
+                }
+                """
+                        .formatted(
+                                slotStart.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                                whitespaceTopic);
+
+        mockMvc.perform(post("/api/bookings").contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.booking.topic").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
     void createBookingWithTopicShouldReturnTopicInCreatedBooking() throws Exception {
         LocalDateTime slotStart = LocalDateTime.of(2026, 11, 23, 10, 0);
         String json =

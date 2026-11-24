@@ -228,6 +228,52 @@ class BookingServiceTest {
         }
 
         @Test
+        @DisplayName("should normalize whitespace-only topic longer than 300 characters to null")
+        void createBookingWithLongWhitespaceOnlyTopicShouldSaveNull() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("   ".repeat(350));
+
+            when(eventTypeRepository.findById(1L)).thenReturn(java.util.Optional.of(eventType));
+            when(bookingRepository.findBySlotStartBeforeAndSlotEndForUpdate(any(), any()))
+                    .thenReturn(List.of());
+            stubSaveEchoesEntity();
+
+            Booking booking = createService(eventType).create(request);
+
+            assertNull(booking.getTopic());
+
+            verify(eventTypeRepository).findById(1L);
+            verify(bookingRepository).findBySlotStartBeforeAndSlotEndForUpdate(any(), any());
+            verify(bookingRepository).save(any());
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
+        @DisplayName("should throw when topic exceeds 300 characters after trim")
+        void createBookingWithTooLongTopicShouldThrow() {
+            EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
+            LocalDateTime slotStart = LocalDate.now(FIXED_CLOCK).plusDays(1).atTime(10, 0);
+            BookingRequest request = new BookingRequest();
+            request.setEventTypeId("1");
+            request.setSlotStart(slotStart);
+            request.setGuestName("Test Guest");
+            request.setTopic("  " + "т".repeat(301) + "  ");
+
+            IllegalStateException exception =
+                    assertThrows(
+                            IllegalStateException.class,
+                            () -> createService(eventType).create(request));
+
+            assertTrue(exception.getMessage().contains("topic"));
+            verifyNoMoreInteractions(eventTypeRepository, bookingRepository, slotService);
+        }
+
+        @Test
         @DisplayName("should create booking without topic as before")
         void createBookingWithoutTopicShouldSaveNullTopic() {
             EventType eventType = new EventType(1L, "Консультация", "30 min", 30);
