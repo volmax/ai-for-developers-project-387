@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.17](https://github.com/volmax/ai-for-developers-project-387/compare/v0.1.16...v0.1.17) (2026-11-24)
+
+
+### Features
+
+* **ci:** add weekly code audit workflow with schedule and dispatch ([#1](https://github.com/volmax/ai-for-developers-project-387/issues/1)) ([#25](https://github.com/volmax/ai-for-developers-project-387/issues/25)) ([db04bde](https://github.com/volmax/ai-for-developers-project-387/commit/db04bde6738120c50ac87447c0c37b6f5749f031))
+
+
+### Bug Fixes
+
+* **ci:** add OPENCODE_PERMISSION and GH_TOKEN to weekly audit workflow ([#27](https://github.com/volmax/ai-for-developers-project-387/issues/27)) ([10b7b11](https://github.com/volmax/ai-for-developers-project-387/commit/10b7b114cb0e219cfd6fae8929568cc877f8de55))
+
 ## [0.1.16](https://github.com/volmax/ai-for-developers-project-387/compare/v0.1.15...v0.1.16) (2026-11-24)
 
 
