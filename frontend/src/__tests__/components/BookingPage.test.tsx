@@ -563,3 +563,98 @@ describe("BookingPage — создание бронирования", () => {
     });
   });
 });
+
+describe("BookingPage — тема встречи", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupDefaultMocks([`${TOMORROW_DATE_STR}T09:00:00`], 1);
+  });
+
+  async function selectDateAndSlot(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => expect(screen.queryByText(/загрузка/i)).not.toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: new RegExp(String(TOMORROW_DAY)) }));
+    await waitFor(() => expect(screen.getByText("09:00")).toBeInTheDocument());
+    await user.click(screen.getByText("09:00"));
+    await waitFor(() => expect(screen.getByLabelText("Тема встречи")).toBeInTheDocument());
+  }
+
+  function findBookingsPostBody(): Record<string, unknown> {
+    const call = mockFetch.mock.calls.find(
+      ([url, init]) => url === "/api/bookings" && init?.method === "POST",
+    );
+    expect(call).toBeDefined();
+    return JSON.parse(call![1].body);
+  }
+
+  it("отображает необязательное поле темы с maxLength 300 и подсказкой о лимите", async () => {
+    const user = userEvent.setup();
+    renderWithRouter("/booking/1");
+    await selectDateAndSlot(user);
+
+    const topicInput = screen.getByLabelText("Тема встречи");
+    expect(topicInput).toHaveAttribute("maxLength", "300");
+    expect(screen.getByText(/до 300 символов/i)).toBeInTheDocument();
+  });
+
+  it("отправляет форму без темы — payload не меняется", async () => {
+    setPostHandler(
+      async () => new Response(JSON.stringify({ booking: createMockBooking() }), { status: 201 }),
+    );
+
+    const user = userEvent.setup();
+    renderWithRouter("/booking/1");
+    await selectDateAndSlot(user);
+    await user.type(screen.getByPlaceholderText("Ваше имя"), "Тест Гость");
+    await user.click(screen.getByRole("button", { name: /продолжить/i }));
+
+    await waitFor(() => expect(screen.getByText(/бронирование создано/i)).toBeInTheDocument());
+    expect(findBookingsPostBody()).toEqual({
+      eventTypeId: "1",
+      slotStart: `${TOMORROW_DATE_STR}T09:00:00`,
+      guestName: "Тест Гость",
+    });
+  });
+
+  it("отправляет непустую после обрезки тему в payload", async () => {
+    setPostHandler(
+      async () => new Response(JSON.stringify({ booking: createMockBooking() }), { status: 201 }),
+    );
+
+    const user = userEvent.setup();
+    renderWithRouter("/booking/1");
+    await selectDateAndSlot(user);
+    await user.type(screen.getByPlaceholderText("Ваше имя"), "Тест Гость");
+    await user.type(screen.getByLabelText("Тема встречи"), "  Обсуждение проекта  ");
+    await user.click(screen.getByRole("button", { name: /продолжить/i }));
+
+    await waitFor(() => expect(screen.getByText(/бронирование создано/i)).toBeInTheDocument());
+    expect(findBookingsPostBody()).toEqual({
+      eventTypeId: "1",
+      slotStart: `${TOMORROW_DATE_STR}T09:00:00`,
+      guestName: "Тест Гость",
+      topic: "Обсуждение проекта",
+    });
+  });
+
+  it("не отправляет пустую или пробельную тему в payload", async () => {
+    setPostHandler(
+      async () => new Response(JSON.stringify({ booking: createMockBooking() }), { status: 201 }),
+    );
+
+    const user = userEvent.setup();
+    renderWithRouter("/booking/1");
+    await selectDateAndSlot(user);
+    await user.type(screen.getByPlaceholderText("Ваше имя"), "Тест Гость");
+    await user.type(screen.getByLabelText("Тема встречи"), "   ");
+    await user.click(screen.getByRole("button", { name: /продолжить/i }));
+
+    await waitFor(() => expect(screen.getByText(/бронирование создано/i)).toBeInTheDocument());
+    const body = findBookingsPostBody();
+    expect(body).not.toHaveProperty("topic");
+    expect(body).toEqual({
+      eventTypeId: "1",
+      slotStart: `${TOMORROW_DATE_STR}T09:00:00`,
+      guestName: "Тест Гость",
+    });
+  });
+});
