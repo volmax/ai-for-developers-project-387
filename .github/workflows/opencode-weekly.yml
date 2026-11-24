@@ -1,0 +1,50 @@
+name: Weekly Code Audit
+
+on:
+  schedule:
+    - cron: "17 9 * * 1" # Every Monday at 9:17 UTC
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Task for OpenCode"
+        required: false
+        default: "Review the codebase for TODO, FIXME, and HACK comments. Search existing issues before creating a task for a new finding. Do not repeat an issue or an unchanged comment. Include evidence, a proposed action and a link to this run. Do not create branches or PRs. Record the result, including no findings, in one reusable audit-log issue. Do not repeat an unchanged summary."
+        type: string
+      model:
+        description: "Model to use"
+        required: false
+        default: "opencode/glm-5.3-flash"
+        type: string
+
+concurrency:
+  group: weekly-code-audit
+  cancel-in-progress: false
+
+jobs:
+  opencode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3 (pinned SHA)
+        with:
+          persist-credentials: false
+
+      - name: Run OpenCode
+        uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: ${{ github.event.inputs.model || 'opencode/glm-5.3-flash' }}
+          share: false
+          prompt: |
+            Review the codebase for TODO, FIXME, and HACK comments.
+            Search existing issues before creating a task for a new finding.
+            Do not repeat an issue or an unchanged comment.
+            Include evidence, a proposed action and a link to this run.
+            Do not create branches or PRs. Record the result, including
+            no findings, in one reusable audit-log issue. Do not repeat
+            an unchanged summary.
