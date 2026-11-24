@@ -42,13 +42,13 @@ jobs:
           MAX_RUNS=3
 
           # Count runs of opencode-review or opencode workflow for this PR
+          # Exclude the current run to avoid self-counting
           # Include completed + in_progress + queued to avoid off-by-one
           CURRENT_RUN=$(gh run list \
             --repo "$GITHUB_REPOSITORY" \
             --branch "$HEAD_REF" \
             --json workflowName,status,databaseId \
-            --argjson current "$CURRENT_RUN_ID" \
-            --jq '[.[] | select(
+          | jq --argjson current "$CURRENT_RUN_ID" '[.[] | select(
               (.workflowName == "opencode-review" or .workflowName == "opencode") and
               .databaseId != $current and
               .status != "requested" and
